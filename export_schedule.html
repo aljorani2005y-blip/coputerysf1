@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جدول الدروس - قسم تقنيات الحاسوب</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: white;
+            color: #1e2a3a;
+            padding: 20px;
+            direction: rtl;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3c72, #2b5876);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        .header h1 { font-size: clamp(1.4rem, 5vw, 1.8rem); margin-bottom: 8px; }
+        .header p { opacity: 0.8; font-size: 0.85rem; }
+        .section { padding: 20px; border-bottom: 1px solid #e2e8f0; }
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #2b5876;
+            border-right: 5px solid #3b82f6;
+            padding-right: 15px;
+            margin-bottom: 20px;
+        }
+        .stats-grid {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            flex: 1 1 150px;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .stat-number { font-size: 1.8rem; font-weight: bold; color: #3b82f6; }
+        .stat-label { font-size: 0.8rem; color: #64748b; }
+        .schedule-card {
+            margin-bottom: 30px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow-x: auto;
+        }
+        .schedule-header {
+            background: #f1f5f9;
+            padding: 12px 20px;
+            font-weight: bold;
+            font-size: 1rem;
+            border-bottom: 2px solid #3b82f6;
+        }
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            min-width: 600px;
+        }
+        .schedule-table th, .schedule-table td {
+            border: 1px solid #e2e8f0;
+            padding: 10px 6px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .schedule-table th { background: #f8fafc; font-weight: bold; }
+        .subject-cell { background: #fef9e3; border-radius: 6px; padding: 6px; }
+        .subject-name { font-weight: bold; font-size: 0.85rem; }
+        .teacher-name { font-size: 0.7rem; color: #64748b; }
+        .empty-cell { color: #cbd5e1; font-size: 0.7rem; }
+        .overflow-auto { overflow-x: auto; }
+        .time-cell { font-weight: bold; }
+        .footer {
+            background: #f1f5f9;
+            padding: 15px;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+        .print-btn {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            margin: 20px 0;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            font-size: 0.85rem;
+        }
+        @media print { body { padding: 0; background: white; } .no-print { display: none; } }
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .stats-grid { flex-direction: column; }
+            .schedule-table th, .schedule-table td { font-size: 0.7rem; padding: 6px 4px; }
+            .section-title { font-size: 1.2rem; }
+            .header h1 { font-size: 1.3rem; }
+            .stat-number { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📅 جدول الدروس الدراسية الذكي</h1>
+        <p>قسم تقنيات الحاسوب - الخطة الدراسية 2024-2025</p>
+        <p>تاريخ التقرير: {{ export_date }}</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">📊 إحصائيات عامة</div>
+        <div class="stats-grid">
+            <div class="stat-card"><div class="stat-number">{{ stage1_count }}</div><div class="stat-label">مادة في المرحلة الأولى</div></div>
+            <div class="stat-card"><div class="stat-number">{{ stage2_count }}</div><div class="stat-label">مادة في المرحلة الثانية</div></div>
+            <div class="stat-card"><div class="stat-number">{{ days|length * time_slots|length }}</div><div class="stat-label">حصص أسبوعية لكل شعبة</div></div>
+        </div>
+    </div>
+
+    <!-- المرحلة الأولى -->
+    <div class="section">
+        <div class="section-title">🎓 المرحلة الأولى</div>
+        {% for section in ['A', 'B'] %}
+        <div class="schedule-card" data-stage="1" data-section="{{ section }}">
+            <div class="schedule-header">📌 شعبة {{ section }}</div>
+            <div class="overflow-auto">
+                <table class="schedule-table">
+                    <thead>
+                        <tr><th>الوقت / اليوم</th>{% for day in days %}<th>{{ day }}</th>{% endfor %}</tr>
+                    </thead>
+                    <tbody>
+                        {% for time in time_slots %}
+                        <tr>
+                            <td class="time-cell">{{ time }}</td>
+                            {% for day in days %}
+                            <td>
+                                {% set entry = schedule_data[1][section][day][time] if schedule_data[1][section][day] and time in schedule_data[1][section][day] else None %}
+                                {% if entry %}
+                                <div class="subject-cell">
+                                    <div class="subject-name">{{ entry.subject_name }}</div>
+                                    <div class="teacher-name">{{ entry.teacher }}</div>
+                                </div>
+                                {% else %}
+                                <span class="empty-cell">-</span>
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- المرحلة الثانية -->
+    <div class="section">
+        <div class="section-title">🎓 المرحلة الثانية</div>
+        {% for section in ['A', 'B'] %}
+        <div class="schedule-card" data-stage="2" data-section="{{ section }}">
+            <div class="schedule-header">📌 شعبة {{ section }}</div>
+            <div class="overflow-auto">
+                <table class="schedule-table">
+                    <thead>
+                        <tr><th>الوقت / اليوم</th>{% for day in days %}<th>{{ day }}</th>{% endfor %}</tr>
+                    </thead>
+                    <tbody>
+                        {% for time in time_slots %}
+                        <tr>
+                            <td class="time-cell">{{ time }}</td>
+                            {% for day in days %}
+                            <td>
+                                {% set entry = schedule_data[2][section][day][time] if schedule_data[2][section][day] and time in schedule_data[2][section][day] else None %}
+                                {% if entry %}
+                                <div class="subject-cell">
+                                    <div class="subject-name">{{ entry.subject_name }}</div>
+                                    <div class="teacher-name">{{ entry.teacher }}</div>
+                                </div>
+                                {% else %}
+                                <span class="empty-cell">-</span>
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="footer">
+        <p>تم إنشاء هذا الجدول بواسطة نظام الجدول الذكي | جميع الحقوق محفوظة © 2025</p>
+        <button type="button" class="print-btn no-print" onclick="window.print()">🖨️ طباعة الجدول</button>
+        <button type="button" class="print-btn no-print" onclick="downloadSchedule()">📥 تنزيل الجدول (docx)</button>
+    </div>
+</div>
+
+<script>
+    // دالة التنزيل (تعتمد على قراءة الجداول من DOM)
+   function downloadSchedule() {
+    // 1. نسخ محتوى المنطقة المطلوب تصديرها (كل الجداول والعناوين والإحصائيات)
+    // نستهدف الحاوية الرئيسية التي تحتوي على كل شيء نريد تصديره
+    const container = document.querySelector('.container');
+    if (!container) {
+        alert("لا يوجد محتوى للتصدير");
+        return;
+    }
+
+    // 2. إنشاء نسخة من المحتوى لنتلاعب بها دون التأثير على الصفحة الأصلية
+    const contentClone = container.cloneNode(true);
+    
+    // 3. إزالة الأزرار والعناصر غير المرغوب فيها من النسخة
+    const noPrintElements = contentClone.querySelectorAll('.no-print');
+    noPrintElements.forEach(el => el.remove());
+    
+    // 4. إضافة بعض التنسيقات الإضافية لضمان ظهور الجدول بشكل جيد في Word
+    const style = document.createElement('style');
+    style.textContent = `
+        body {
+            font-family: 'Cairo', 'Arial', sans-serif;
+            direction: rtl;
+            margin: 2cm;
+            font-size: 12pt;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #1e3c72;
+        }
+        .stats-grid {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+        .stat-card {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+            min-width: 150px;
+        }
+        .stat-number {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+        .schedule-card {
+            margin-bottom: 40px;
+            page-break-after: always;
+        }
+        .schedule-header {
+            background: #f1f5f9;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 14pt;
+            border-bottom: 2px solid #3b82f6;
+            margin-bottom: 10px;
+        }
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .schedule-table th, .schedule-table td {
+            border: 1px solid #aaa;
+            padding: 6px;
+            text-align: center;
+        }
+        .subject-cell {
+            background: #fef9e3;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 9pt;
+            color: #666;
+        }
+    `;
+    contentClone.prepend(style);
+    
+    // 5. تحويل النسخة إلى نص HTML كامل
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>جدول الدروس - قسم تقنيات الحاسوب</title>
+        </head>
+        <body>
+            ${contentClone.innerHTML}
+        </body>
+        </html>
+    `;
+    
+    // 6. إنشاء blob من نوع application/msword لتحميله كملف Word
+    const blob = new Blob([htmlContent], { type: "application/msword" });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.setAttribute('download', `schedule_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.doc`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

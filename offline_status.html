@@ -1,0 +1,17 @@
+<!-- عرض حالة الاتصال -->
+<link rel="stylesheet" href="offline_status.css">
+<div id="offline-status-bar">
+    <i class="fas fa-wifi-slash"></i> أنت غير متصل - سيتم حفظ التغييرات محلياً
+</div>
+<script>
+    function updateOfflineStatus() {
+        const bar = document.getElementById('offline-status-bar');
+        if (bar) {
+            if (!navigator.onLine) bar.style.display = 'block';
+            else bar.style.display = 'none';
+        }
+    }
+    window.addEventListener('online', updateOfflineStatus);
+    window.addEventListener('offline', updateOfflineStatus);
+    updateOfflineStatus();
+</script>

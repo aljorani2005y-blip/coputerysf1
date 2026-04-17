@@ -1,0 +1,30 @@
+<table class="schedule-table">
+    <thead>
+        <tr>
+            <th>الوقت / اليوم</th>
+            {% for day in days %}
+            <th>{{ day }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for time in time_slots %}
+        <tr>
+            <td style="font-weight: bold;">{{ time }}</td>
+            {% for day in days %}
+            <td>
+                {% set entry = schedule_data[stage][section][day][time] if stage in schedule_data and section in schedule_data[stage] and day in schedule_data[stage][section] and time in schedule_data[stage][section][day] else None %}
+                {% if entry %}
+                <div class="subject-cell">
+                    <div class="subject-name">{{ entry.subject_name }}</div>
+                    <div class="teacher-name">{{ entry.teacher }}</div>
+                </div>
+                {% else %}
+                <span class="empty-cell">-</span>
+                {% endif %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

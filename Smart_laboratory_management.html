@@ -1,0 +1,2238 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة المختبرات الذكي | لوحة التحكم</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --neon-blue: #00d5ff;
+            --dark-bg: #000000;
+            --card-bg: rgba(17, 25, 41, 0.185);
+            --header-blue: #16275a57;
+            --header-blue0: #007bff;
+            --admin-gold: #00d9ff;
+            --accent-blue: #3b83f6;
+            --edit-green: #27ae60;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+            background: var(--dark-bg);
+            color: white;
+            overflow-x: hidden;
+            font-size: 1rem;
+        }
+
+        /* --- خلفية THREE.JS --- */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0.4;
+        }
+
+        .ui-overlay {
+            position: relative;
+            z-index: 2;
+            padding: 30px;
+            min-height: 100vh;
+            background: radial-gradient(circle at center, rgba(0, 212, 255, 0.05) 0%, rgba(0, 0, 0, 0) 70%);
+        }
+
+        @keyframes revealPopup {
+            0% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .pop-up-element {
+            animation: revealPopup 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            opacity: 0;
+            will-change: opacity;
+        }
+
+        .pop-up-delay-1 {
+            animation-delay: 0.1s;
+        }
+
+        .pop-up-delay-2 {
+            animation-delay: 0.2s;
+        }
+
+        /* --- الهيدر (Header) --- */
+        .top-banner {
+            background: var(--header-blue);
+            padding: 15px 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            justify-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .fas.fa-microscope {
+            color: var(--neon-blue);
+            margin-left: 10px;
+        }
+
+        .banner-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            background: linear-gradient(30deg, #00aeff, #ccc, #ffffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: #00d5ff 3px 6px 10px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-mode {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 0, 0, 0.253);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: bold;
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 1000;
+            
+        }
+
+        .btn-mode:hover {
+            background: rgba(0, 0, 0, 0.342);
+            color: var(--header-blue0);
+        }
+
+        .btn-mode1 {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 0, 0, 0.26);
+            color: white;
+            padding: 8px 0px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: bold;
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 1000;
+            
+        }
+
+        .btn-mode1:hover {
+            background: rgba(0, 0, 0, 0.404);
+            color: var(--header-blue0);
+        }
+
+        .admin-active {
+            background: var(--admin-gold);
+            color: rgb(255, 255, 255);
+            border-color: var(--admin-gold);
+            box-shadow: 0 0 15px var(--admin-gold);
+        }
+
+        .admin-active:hover {
+            background: var(--admin-gold);
+            color: rgba(45, 118, 255, 0.733);
+            text-shadow: rgb(0, 183, 255) 0px 0px 10px;
+            border-color: var(--admin-gold);
+            box-shadow: 0 0 15px var(--admin-gold);
+        }
+
+        /* --- شبكة المختبرات --- */
+        .table-wrapper {
+    overflow-x: auto;
+}
+        .lab-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+            font-size: 0.2rem;
+        }
+
+        .lab-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            overflow: hidden;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+        }
+
+        .lab-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: var(--neon-blue);
+        }
+
+        .lab-card-header {
+            background: rgba(0, 123, 255, 0.2);
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.5rem;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+            color: var(--neon-blue);
+        }
+
+        .lab-card-body {
+            padding: 15px;
+        }
+
+        .info-row {
+            margin-bottom: 12px;
+            font-size: 1.0rem;
+        }
+
+        .info-row strong {
+            color: var(--neon-blue);
+            margin-left: 5px;
+        }
+
+        /* تنسيق الليبل الجديد للحاسبات المختارة */
+        .pc-label-container {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .pc-badge {
+            background: var(--admin-gold);
+            color: black;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            animation: revealPopup 0.3s ease;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 15px 0;
+            color: #2ecc71;
+            font-weight: bold;
+            font-size:0.7rem;
+        }
+
+        .description-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            border-right: 4px solid var(--admin-gold);
+            color: #ccc;
+        }
+
+        /* --- أزرار الإدارة --- */
+        .admin-actions {
+            display: none;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-edit {
+            flex: 1;
+            padding: 10px;
+            background: var(--edit-green);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn-delete {
+            flex: 1;
+            padding: 10px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .admin-only {
+            display: none;
+        }
+
+        #admin-section {
+            display: none;
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--admin-gold);
+            margin-bottom: 30px;
+        }
+
+        .form-add {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .form-add input,
+        .form-add textarea {
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            color: white;
+            border-radius: 6px;
+            font-family: 'Cairo';
+        }
+
+        .btn-submit {
+            background: #8e44ad;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-neutral {
+            background: rgba(0, 2, 5, 0.31);
+            border: 1px solid rgb(0, 0, 0);
+        }
+
+        .hide-by-default {
+            display: none;
+        }
+
+        .form-title {
+            color: var(--admin-gold);
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        .description-full {
+            grid-column: 1 / -1;
+            height: 60px;
+        }
+
+        .form-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 10px;
+        }
+
+        .verify-input {
+            flex: 1;
+            min-width: 0;
+            border: 1px solid var(--admin-gold);
+            border-radius: 6px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.4);
+            color: white;
+            font-family: 'Cairo';
+            box-sizing: border-box;
+        }
+
+        .submit-btn-large {
+            flex: 3;
+        }
+
+        .cancel-btn {
+            flex: 1;
+            display: none;
+            background: #7f8c8d;
+        }
+
+        .clear-notes-btn {
+            margin-right: 10px;
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid rgba(255, 0, 0, 0.5);
+            color: #e74c3c;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .label-placeholder {
+            color: #777;
+            font-size: 0.8rem;
+        }
+
+        .spacer-row {
+            grid-column: 1 / -1;
+            position: relative;
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+
+        .schedule-container {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .schedule-title {
+            color: var(--neon-blue);
+        }
+
+        .schedule-box {
+            overflow-x: auto;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            color: white;
+        }
+
+        .schedule-table thead tr {
+            border-bottom: 2px solid var(--neon-blue);
+        }
+
+        .schedule-table th {
+            padding: 10px;
+        }
+
+        .outline-button {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .section-center {
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .comp-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .comp-modal-content {
+            background: var(--card-bg);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid var(--neon-blue);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .modal-title {
+            color: var(--neon-blue);
+            margin-bottom: 20px;
+        }
+
+        .computers-list-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .comp-cancel-btn {
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .delete-form-flex {
+            flex: 1;
+        }
+
+        .top-divider {
+            margin-top: 20px;
+            border-top: 1px solid var(--admin-gold);
+        }
+
+        #ai-window {
+    position: fixed;
+    bottom: 90px;
+    left: 20px;
+    width: 350px;
+    max-width: calc(100% - 40px);
+    height: 580px;
+    max-height: 70vh;
+    background: rgba(10, 15, 28, 0.95);
+    border: 1px solid var(--neon-blue);
+    border-radius: 15px;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    overflow: hidden;
+}
+@media (max-width: 640px) {
+    #ai-window {
+        left: 10px;
+        width: calc(100% - 20px);
+        bottom: 70px;
+        max-height: 60vh;
+    }
+}
+        /* --- نافذة الذكاء الاصطناعي --- */
+        #ai-chat-container {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+       
+        #ai-header {
+            background: linear-gradient(90deg, var(--header-blue0), #0056b3);
+            color: white;
+            padding: 12px;
+            font-weight: bold;
+            text-align: center;
+            border-bottom: 1px solid var(--neon-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #ai-header span {
+            flex: 1;
+        }
+
+        #clear-chat-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+            margin-left: 5px;
+        }
+
+        #clear-chat-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        #ai-messages {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 400px;
+        }
+
+        #ai-messages::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        #ai-messages::-webkit-scrollbar-thumb {
+            background: var(--neon-blue);
+            border-radius: 10px;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 85%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background: rgba(0, 123, 255, 0.3);
+            align-self: flex-end;
+            border-bottom-left-radius: 0;
+        }
+
+        .bot-message {
+            background: rgba(255, 255, 255, 0.1);
+            align-self: flex-start;
+            border-bottom-right-radius: 0;
+        }
+
+        .typing-indicator {
+            color: var(--neon-blue);
+            font-style: italic;
+        }
+
+        #ai-input-area {
+            display: flex;
+            padding: 12px;
+            background: rgba(10, 15, 28, 1);
+            border-top: 1px solid rgba(0, 213, 255, 0.3);
+            z-index: 10;
+        }
+
+        #ai-input-area input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 213, 255, 0.3);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        #ai-input-area button {
+            background: var(--neon-blue);
+            border: none;
+            color: black;
+            padding: 8px 15px;
+            margin-right: 5px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        #ai-input-area button:hover {
+            transform: scale(1.05);
+            background: #fff;
+        }
+
+        /* نوافذ كلمة السر المخصصة */
+        .password-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .password-modal-content {
+            background: var(--card-bg);
+            
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid var(--admin-gold);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 0 30px var(--admin-gold);
+        }
+
+        .password-modal-content h3 {
+            color: var(--admin-gold);
+            margin-bottom: 20px;
+        }
+
+        .password-modal-content .error-message {
+            color: #e74c3c;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .password-modal-content input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--neon-blue);
+            color: white;
+            border-radius: 6px;
+            font-family: 'Cairo';
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        .password-modal-content input:focus {
+            outline: none;
+            border-color: var(--admin-gold);
+        }
+
+        .password-modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .password-modal-buttons button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-password-submit {
+            background: var(--edit-green);
+            color: white;
+        }
+
+        .btn-password-submit:hover {
+            background: #2ecc71;
+        }
+
+        .btn-password-cancel {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-password-cancel:hover {
+            background: #c0392b;
+        }
+        /* نافذة التحقق من البيانات */
+#validation-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 3500;
+    justify-content: center;
+    align-items: center;
+}
+
+.validation-modal-content {
+    background: var(--card-bg);
+    
+    padding: 30px;
+    border-radius: 15px;
+    border: 1px solid var(--admin-gold);
+    width: 90%;
+    max-width: 450px;
+    text-align: center;
+    box-shadow: 0 0 30px var(--admin-gold);
+    animation: revealPopup 0.3s ease;
+    
+}
+
+.validation-modal-content h3 {
+    color: #e74c3c;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    border-bottom: 2px solid #e74c3c;
+    padding-bottom: 10px;
+}
+
+.validation-modal-content .error-list {
+    text-align: right;
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    border-right: 4px solid #e74c3c;
+}
+
+.validation-modal-content .error-list p {
+    margin: 8px 0;
+    color: #fff;
+    font-size: 1rem;
+}
+
+.validation-modal-content .error-list i {
+    color: #e74c3c;
+    margin-left: 8px;
+}
+
+.validation-modal-content .error-footer {
+    color: #ccc;
+    font-size: 0.9rem;
+    margin: 15px 0;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.validation-modal-content .btn-validation {
+    background: var(--edit-green);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+    font-family: 'Cairo', sans-serif;
+    font-size: 1rem;
+    min-width: 120px;
+}
+
+.validation-modal-content .btn-validation:hover {
+    background: #2ecc71;
+    transform: scale(1.05);
+    box-shadow: 0 0 15px var(--edit-green);
+}
+@keyframes fadeOut {
+    from { 
+        opacity: 1;
+        transform: scale(1);
+    }
+    to { 
+        opacity: 0;
+        transform: scale(0.95);
+    }
+}
+/* تحسين الاستجابة */
+.lab-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+    .top-banner {
+        flex-direction: column;
+        text-align: center;
+    }
+    .button-group {
+        width: 100%;
+        justify-content: center;
+    }
+    .admin-actions {
+        flex-direction: column;
+    }
+    .form-add {
+        grid-template-columns: 1fr;
+    }
+    .schedule-table th, .schedule-table td {
+        font-size: 0.7rem;
+        padding: 6px 4px;
+    }
+    .btn-mode, .btn-mode1 {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    .lab-card {
+        padding: 15px;
+    }
+    .stats-bar {
+        flex-direction: column;
+        gap: 5px;
+    }
+}
+
+@media (max-width: 480px) {
+    .lab-card-header {
+        font-size: 1.2rem;
+    }
+    .info-row {
+        font-size: 0.85rem;
+    }
+}
+
+  .tabs {
+        display: flex;
+        gap: 8px;
+        padding: 10px;
+        overflow-x: auto;
+        white-space: nowrap;
+        scrollbar-width: thin;
+    }
+  .tab-btn {
+        flex: 0 0 auto;
+        padding: 8px 16px;
+    }
+    .section-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+     @media (min-width: 1024px) {
+        .section-container {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+       @media (max-width: 768px) {
+        .stats-bar {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .batch-buttons {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .batch-buttons select, .batch-buttons button {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        .schedule-table th, .schedule-table td {
+            font-size: 0.7rem;
+            padding: 6px 4px;
+        }
+        .card-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .btn-group {
+            width: 100%;
+            justify-content: space-between;
+        }
+        .modal-content {
+            width: 95%;
+            margin: 10px;
+        }
+        .form-group input, .form-group select {
+            font-size: 0.9rem;
+        }
+    }
+    @media (max-width: 480px) {
+        .tab-btn {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+        }
+        .schedule-table th, .schedule-table td {
+            font-size: 0.65rem;
+            padding: 4px 2px;
+        }
+    }
+    .table-wrapper {
+        overflow-x: auto;
+    }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div class="ui-overlay">
+
+        <div class="top-banner pop-up-element pop-up-delay-1">
+            <div class="banner-title">
+                <i class="fas fa-microscope"></i> نظام الإشراف الذكي | قسم تقنيات الحاسوب
+            </div>
+            <!-- زر نظام الجدول الذكي من الملف الأول -->
+            <button type="button" class="btn-mode1 outline-button" onclick="window.location.href='/smart_schedule'">
+              <i class="fas fa-calendar-alt"></i> نظام الجدول الذكي
+            </button>
+            <div class="button-group">
+                <!-- زر إضافة مختبر جديد (يظهر فقط في وضع الأدمن) -->
+                <button type="button" id="addLabBtn" class="btn-mode btn-neutral hide-by-default" onclick="showAddLabPasswordModal()">
+                    <i class="fas fa-plus"></i> إضافة مختبر جديد
+                </button>
+                <button type="button" id="toggleMode" class="btn-mode btn-neutral" onclick="showAdminPasswordModal()">
+                    <i class="fas fa-lock"></i> دخول الأدمن
+                </button>
+            </div>
+        </div>
+
+        <div id="admin-section">
+            <h3 id="form-title" class="form-title">
+                <i class="fas fa-plus-circle"></i> إضافة مختبر جديد
+            </h3>
+            <form id="lab-form" class="form-add" action="/add_lab" method="POST">
+                <input type="text" id="lab_name" name="lab_name" placeholder="اسم المختبر" required>
+                <input type="text" id="supervisor" name="supervisor" placeholder="المشرف المسؤول" required>
+                <input type="number" id="count" name="count" placeholder="عدد الحواسيب" required>
+                <input type="text" id="software" name="software" placeholder="البرمجيات المنصبة">
+                <input type="text" id="error" name="error" placeholder="الاجهزة العطلانة">
+                <input type="number" id="seats" name="seats" placeholder="عدد المقاعد" required>
+                <textarea id="description" name="description" placeholder="وصف المختبر" class="description-full"></textarea>
+                <div class="form-actions">
+                    <input type="password" id="lab_code_verify" name="lab_password" placeholder="أدخل رمز المختبر لتأكيد التعديل" required class="verify-input">
+                    <button type="button" id="submit-btn" class="btn-submit submit-btn-large" onclick="showEditConfirmModal()">حفظ</button>
+                    <button type="button" id="cancel-btn" class="btn-delete cancel-btn" onclick="cancelEdit()">
+                        تراجع عن التعديل
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="lab-grid">
+            {% for lab in labs %}
+            <div class="lab-card pop-up-element pop-up-delay-2" data-lab-id="{{ lab.Lab_ID }}" data-lab-index="{{ loop.index }}">
+                <div class="lab-card-header">{{ lab.Lab_Name }}</div>
+                <div class="lab-card-body" >
+                    <div class="info-row"><strong><i class="fas fa-user-tie"></i> المشرف:</strong> {{ lab.Supervisor }}</div>
+
+                    <div class="stats-bar">
+                        <span><i class="fa-solid fa-laptop"></i>{{ lab.Computer_Count}} جهاز</span>
+                        <span><i class="fa-solid fa-"></i> | {{ lab.Computer_Count}} عدد المقاعد | </span>
+                        <span><i class="fa-solid fa-circle-check"></i> متصل</span>
+                    </div>
+
+                    <div class="info-row"><strong><i class="fas fa-code"></i> البرامج:</strong> {{ lab.Basic_Software }}</div>
+
+                    <div class="info-row">
+                        <strong><i class="fas fa-code"></i> الاجهزة العطلانة:</strong> {{ lab.computer_error }}
+                        <button type="button" onclick="clearDescription('{{ loop.index }}')" class="admin-only admin-actions clear-notes-btn">
+                            <i class="fas fa-eraser"></i> مسح الملاحظات
+                        </button>
+                        <div id="pc-labels-{{ loop.index }}" class="pc-label-container">
+                            <span class="label-placeholder">(لم يتم اختيار أي حاسبة بعد)</span>
+                        </div>
+                    </div>
+
+                    <div class="spacer-row">
+                    </div>
+
+                    <div class="description-box">
+                        <strong><i class="fas fa-info-circle"></i> الوصف الأصلي:</strong> {{ lab.Lab_Description }}
+                    </div>
+
+                    <div class="admin-only admin-actions">
+                        <button type="button" class="btn-mode" onclick="showLabComputers('{{ lab.Lab_Name }}', '{{ lab.Computer_Count }}', '{{ loop.index }}', '{{ lab.Lab_ID }}')">
+                            <i class="fas fa-desktop"></i> عرض حاسبات المختبر
+                        </button>
+                    </div>
+
+                    <div class="admin-only admin-actions">
+                        <button type="button" class="btn-edit" onclick="prepareEdit('{{ lab.Lab_ID }}', '{{ lab.Lab_Name }}', '{{ lab.Supervisor }}', '{{ lab.Computer_Count }}', '{{ lab.Basic_Software }}', '{{ lab.computer_error }}', '{{ lab.Lab_Description }}')">
+                            <i class="fas fa-edit"></i> تعديل
+                        </button>
+
+                        <form id="delete-form-{{ lab.Lab_ID }}" action="{{ url_for('delete_lab', Lab_ID=lab.Lab_ID) }}" method="POST" class="delete-form-flex">
+                            <input type="hidden" name="lab_code_delete" id="pass-{{ lab.Lab_ID }}">
+                            <button type="button" class="btn-delete" onclick="confirmDelete('{{ lab.Lab_ID }}')">
+                                <i class="fas fa-trash"></i> حذف
+                            </button>
+                        </form>
+                    </div>
+                    <div class="admin-only admin-actions top-divider">
+                        
+                    </div>
+                    <div id="schedule-container" class="pop-up-element schedule-container">
+                        <h3 class="schedule-title"><i class="fas fa-table"></i> جدول توزيع المختبرات المقترح</h3>
+                        <div class="schedule-box">
+                            <table class="schedule-table">
+                                <thead>
+                                    <tr>
+                                        <th>المختبر</th>
+                                        <th>الوقت</th>
+                                        <th>المادة</th>
+                                        <th>المرحلة/الشعبة</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="schedule-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- نافذة كلمة السر لدخول الأدمن -->
+        <div id="admin-password-modal" class="password-modal">
+            <div class="password-modal-content">
+                <h3><i class="fas fa-lock"></i> دخول الأدمن</h3>
+                <div id="admin-error" class="error-message"></div>
+                <input type="password" id="admin-password-input" placeholder="أدخل كلمة سر الأدمن" autocomplete="off">
+                <div class="password-modal-buttons">
+                    <button type="button" class="btn-password-submit" onclick="checkAdminPassword()">تأكيد</button>
+                    <button type="button" class="btn-password-cancel" onclick="closeAdminPasswordModal()">إلغاء</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- نافذة كلمة السر لإضافة مختبر جديد -->
+        <div id="addlab-password-modal" class="password-modal">
+            <div class="password-modal-content">
+                <h3><i class="fas fa-lock"></i> تأكيد صلاحية الإضافة</h3>
+                <div id="addlab-error" class="error-message"></div>
+                <input type="password" id="addlab-password-input" placeholder="أدخل كلمة السر" autocomplete="off">
+                <div class="password-modal-buttons">
+                    <button type="button" class="btn-password-submit" onclick="checkAddLabPassword()">تأكيد</button>
+                    <button type="button" class="btn-password-cancel" onclick="closeAddLabPasswordModal()">إلغاء</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- نافذة تأكيد الحذف -->
+        <div id="delete-password-modal" class="password-modal">
+            <div class="password-modal-content">
+                <h3><i class="fas fa-trash-alt"></i> تأكيد الحذف</h3>
+                <div id="delete-error" class="error-message"></div>
+                <input type="password" id="delete-password-input" placeholder="أدخل رمز المختبر" autocomplete="off">
+                <div class="password-modal-buttons">
+                    <button type="button" class="btn-password-submit" onclick="submitDelete()">تأكيد</button>
+                    <button type="button" class="btn-password-cancel" onclick="closeDeleteModal()">إلغاء</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- نافذة تأكيد التعديل -->
+        <div id="edit-password-modal" class="password-modal">
+            <div class="password-modal-content">
+                <h3><i class="fas fa-edit"></i> تأكيد التعديل</h3>
+                <div id="edit-error" class="error-message"></div>
+                <input type="password" id="edit-password-input" placeholder="أدخل رمز المختبر" autocomplete="off">
+                <div class="password-modal-buttons">
+                    <button type="button" class="btn-password-submit" onclick="submitEdit()">تأكيد</button>
+                    <button type="button" class="btn-password-cancel" onclick="closeEditModal()">إلغاء</button>
+                </div>
+            </div>
+        </div>
+<!-- نافذة التحقق من البيانات -->
+<div id="validation-modal" class="password-modal">
+    <div class="validation-modal-content">
+        <h3><i class="fas fa-exclamation-triangle"></i> خطأ في البيانات</h3>
+        <div id="validation-error-list" class="error-list">
+            <!-- سيتم إضافة الأخطاء هنا عبر JavaScript -->
+        </div>
+        <div class="error-footer">
+            <i class="fas fa-info-circle"></i> الرجاء تصحيح الأخطاء والمحاولة مرة أخرى
+        </div>
+        <button type="button" class="btn-validation" onclick="closeValidationModal()">
+            <i class="fas fa-check"></i> موافق
+        </button>
+    </div>
+</div>
+
+
+        <div id="comp-modal" class="comp-modal">
+            <div class="comp-modal-content">
+                <h3 id="modal-title" class="modal-title"></h3>
+                <div id="computers-list-container" class="computers-list-grid">
+                </div>
+                <button type="button" class="btn-delete comp-cancel-btn" onclick="document.getElementById('comp-modal').style.display='none'">إلغاء</button>
+            </div>
+        </div>
+
+        <div class="section-center pop-up-element">
+            <button type="button" class="btn-mode1 outline-button" onclick="window.location.href='/'">← العودة للرئيسية</button>
+        </div>
+        <div class="section-center pop-up-element">
+
+        </div>
+    </div>
+
+        <div id="ai-chat-container">
+        <div id="ai-window">
+            <div id="ai-header">
+                <span>المساعد الذكي (Gemini AI)</span>
+                <button type="button" id="clear-chat-btn" onclick="clearChat()" title="مسح الدردشة"><i class="fas fa-trash-alt"></i></button>
+            </div>
+            <div id="ai-messages"></div>
+            <div id="ai-input-area">
+                <input type="text" id="user-msg" placeholder="اسألني عن المختبرات..." onkeypress="if(event.key==='Enter') sendMessage()">
+                <button type="button" onclick="sendMessage()">إرسال</button>
+            </div>
+        </div>
+        <button type="button" class="btn-mode outline-button" id="ai-toggle" onclick="toggleChat()">🤖 اسأل الذكاء الاصطناعي</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        
+        let isAdmin = false;
+        let currentAdminPassword = "";
+        let selectedComputers = [];
+        let currentDeleteLabId = null;   // لتخزين معرف المختبر المراد حذفه
+
+        // دوال نافذة كلمة السر للأدمن
+        function showAdminPasswordModal() {
+            if (isAdmin) {
+                // إذا كان بالفعل في وضع الأدمن، نقوم بتسجيل الخروج
+                logoutAdmin();
+            } else {
+                document.getElementById('admin-password-modal').style.display = 'flex';
+                document.getElementById('admin-password-input').value = '';
+                document.getElementById('admin-error').style.display = 'none';
+                document.getElementById('admin-password-input').focus();
+            }
+        }
+
+        function closeAdminPasswordModal() {
+            document.getElementById('admin-password-modal').style.display = 'none';
+        }
+
+        function showError(elementId, message) {
+            const errorDiv = document.getElementById(elementId);
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 3000);
+        }
+
+       function checkAdminPassword() {
+    const password = document.getElementById('admin-password-input').value;
+    fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: password }),
+        credentials: 'include'  // مهم جداً لإرسال الكوكيز
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            closeAdminPasswordModal();
+            enableAdminMode();
+            showToast('تم تسجيل الدخول بنجاح', 'success');
+        } else {
+            showError('admin-error', 'كلمة السر غير صحيحة!');
+            document.getElementById('admin-password-input').value = '';
+            document.getElementById('admin-password-input').focus();
+        }
+    })
+    .catch(err => {
+        showError('admin-error', 'خطأ في الاتصال بالخادم');
+    });
+}
+    
+
+       function logoutAdmin() {
+    fetch('/api/admin/logout', {
+        method: 'POST',
+        credentials: 'include'
+    })
+    .then(() => {
+        isAdmin = false;
+        document.getElementById('admin-section').style.display = 'none';
+        document.getElementById('addLabBtn').style.display = 'none';
+        const toggleBtn = document.getElementById('toggleMode');
+        toggleBtn.innerHTML = '<i class="fas fa-lock"></i> دخول الأدمن';
+        toggleBtn.classList.remove('admin-active');
+        document.querySelectorAll('.admin-only').forEach(el => { el.style.display = 'none'; });
+        showToast('تم تسجيل الخروج', 'info');
+    });
+}
+async function checkAdminStatus() {
+    try {
+        const res = await fetch('/api/admin/status', { credentials: 'include' });
+        const data = await res.json();
+        if (data.logged_in) {
+            isAdmin = true;
+            enableAdminMode();
+        }
+    } catch(e) {
+        console.log('غير مسجل دخول');
+    }
+}
+
+        function enableAdminMode() {
+    isAdmin = true;
+    document.getElementById('admin-section').style.display = 'none';
+    document.getElementById('addLabBtn').style.display = 'flex';
+    const toggleBtn = document.getElementById('toggleMode');
+    toggleBtn.innerHTML = '<i class="fas fa-lock-open"></i> خروج من وضع الأدمن';
+    toggleBtn.classList.add('admin-active');
+    document.querySelectorAll('.admin-only').forEach(el => {
+        if (el.classList.contains('admin-actions')) {
+            el.style.display = 'flex';
+        } else {
+            el.style.display = 'block';
+        }
+    });
+    // إعادة تحميل الحاسبات المختارة إذا لزم الأمر
+    if (typeof loadAllSelectedComputers === 'function') loadAllSelectedComputers();
+}
+        // دوال نافذة كلمة السر لإضافة مختبر جديد
+// دوال نافذة كلمة السر لإضافة مختبر جديد
+// دوال نافذة كلمة السر لإضافة مختبر جديد
+// دوال نافذة كلمة السر لإضافة مختبر جديد
+// دوال نافذة كلمة السر لإضافة مختبر جديد
+function showAddLabPasswordModal() {
+    console.log('فتح نافذة إضافة مختبر جديد');
+    
+    // التحقق مما إذا كانت نافذة الإضافة مفتوحة بالفعل
+    const adminSection = document.getElementById('admin-section');
+    const form = document.getElementById('lab-form');
+    
+    // إذا كانت نافذة الإضافة مفتوحة (واضحة للمستخدم) وفي وضع الإضافة (وليس التعديل)
+    if (adminSection.style.display === 'block' && !form.action.includes('/update/')) {
+        console.log('نافذة الإضافة مفتوحة بالفعل - سيتم إخفاؤها');
+        adminSection.style.display = 'none';
+        
+        // إظهار رسالة短暂ة للتأكيد
+        const tempMsg = document.createElement('div');
+        tempMsg.style.position = 'fixed';
+        tempMsg.style.top = '20px';
+        tempMsg.style.left = '50%';
+        tempMsg.style.transform = 'translateX(-50%)';
+        tempMsg.style.background = '#3498db';
+        tempMsg.style.color = 'white';
+        tempMsg.style.padding = '10px 20px';
+        tempMsg.style.borderRadius = '50px';
+        tempMsg.style.zIndex = '10000';
+        tempMsg.style.fontWeight = 'bold';
+        tempMsg.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+        tempMsg.style.animation = 'slideDown 0.3s ease';
+        tempMsg.innerHTML = '<i class="fas fa-check-circle"></i> تم إخفاء نافذة الإضافة';
+        
+        document.body.appendChild(tempMsg);
+        
+        setTimeout(() => {
+            tempMsg.style.animation = 'fadeOut 0.3s ease';
+            setTimeout(() => {
+                document.body.removeChild(tempMsg);
+            }, 300);
+        }, 2000);
+        
+        return;
+    }
+    
+    // إذا كانت النافذة مغلقة أو في وضع التعديل، نفتح نافذة كلمة السر للإضافة
+    document.getElementById('addlab-password-modal').style.display = 'flex';
+    document.getElementById('addlab-password-input').value = '';
+    document.getElementById('addlab-error').style.display = 'none';
+    document.getElementById('addlab-password-input').focus();
+}
+function closeAddLabPasswordModal() {
+    document.getElementById('addlab-password-modal').style.display = 'none';
+}
+
+function checkAddLabPassword() {
+    const password = document.getElementById('addlab-password-input').value;
+    
+    if (password === "1234") {
+        closeAddLabPasswordModal();
+        
+        // التحقق من الوضع الحالي
+        const adminSection = document.getElementById('admin-section');
+        const form = document.getElementById('lab-form');
+        const isAddMode = adminSection.style.display === 'block' && 
+                          !form.action.includes('/update/');
+        
+        if (isAddMode) {
+            // نحن في وضع الإضافة بالفعل - فقط ننعش النموذج (نفرغ الحقول)
+            console.log('نحن في وضع الإضافة، نقوم بتفريغ الحقول');
+            
+            // تفريغ جميع الحقول
+            document.getElementById('lab_name').value = '';
+            document.getElementById('supervisor').value = '';
+            document.getElementById('count').value = '';
+            document.getElementById('seats').value = '';
+            document.getElementById('software').value = '';
+            document.getElementById('error').value = '';
+            document.getElementById('description').value = '';
+            document.getElementById('lab_code_verify').value = '';
+            
+            // تغيير لون الخلفية مؤقتاً للتأكيد
+            adminSection.style.backgroundColor = 'rgba(46, 204, 113, 0.2)';
+            setTimeout(() => {
+                adminSection.style.backgroundColor = 'var(--card-bg)';
+            }, 500);
+            
+           
+            
+        } else{
+            // لسنا في وضع الإضافة - ننتقل إلى وضع الإضافة
+            console.log('لسنا في وضع الإضافة، ننتقل إلى وضع الإضافة');
+            
+            // تجهيز نموذج الإضافة
+            prepareAddForm();
+        }
+        
+    } else {
+        showError('addlab-error', 'كلمة السر غير صحيحة!');
+        document.getElementById('addlab-password-input').value = '';
+        document.getElementById('addlab-password-input').focus();
+    }
+}
+
+// دالة تجهيز نموذج الإضافة
+function prepareAddForm() {
+    console.log('تجهيز نموذج الإضافة');
+    
+    const adminSection = document.getElementById('admin-section');
+    const form = document.getElementById('lab-form');
+    
+    // تغيير العنوان
+    document.getElementById('form-title').innerHTML = '<i class="fas fa-plus-circle"></i> إضافة مختبر جديد';
+    
+    // تغيير زر الحفظ
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.innerText = 'حفظ';
+    submitBtn.style.background = '#8e44ad';
+    submitBtn.disabled = false;
+    submitBtn.onclick = function() {
+        // ربط زر الحفظ بدالة التحقق
+        validateAndSubmit();
+    };
+    
+    // إخفاء زر التراجع عن التعديل
+    const cancelBtn = document.getElementById('cancel-btn');
+    if (cancelBtn) {
+        cancelBtn.style.display = 'none';
+    }
+    
+    // تفريغ جميع الحقول
+    document.getElementById('lab_name').value = '';
+    document.getElementById('supervisor').value = '';
+    document.getElementById('count').value = '';
+    document.getElementById('seats').value = '';
+    document.getElementById('software').value = '';
+    document.getElementById('error').value = '';
+    document.getElementById('description').value = '';
+    document.getElementById('lab_code_verify').value = '';
+    document.getElementById('lab_code_verify').placeholder = 'رمز المختبر للإضافة';
+    
+    // تغيير مسار الإرسال إلى الإضافة
+    form.action = '/add_lab';
+    form.method = 'POST';
+    
+    // إظهار النموذج
+    adminSection.style.display = 'block';
+    
+    // تنظيف أي بيانات تعديل سابقة
+    currentEditLabId = null;
+    
+    // التمرير إلى النموذج
+    // التمرير فقط إذا كان المستخدم بعيداً عن النموذج
+const rect = adminSection.getBoundingClientRect();
+const isInViewport = rect.top >= 0 && rect.bottom <= window.innerHeight;
+
+if (!isInViewport) {
+    adminSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+}
+
+// دالة تجهيز نموذج التعديل
+function prepareEdit(Lab_ID, name, supervisor, count, software, error, description, seats) {
+    console.log('تجهيز نموذج التعديل للمختبر:', Lab_ID);
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    const adminSection = document.getElementById('admin-section');
+    const form = document.getElementById('lab-form');
+    
+    // تغيير العنوان
+    document.getElementById('form-title').innerHTML = '<i class="fas fa-edit"></i> تعديل بيانات: ' + name;
+    
+    // تغيير زر الحفظ
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.innerText = 'تحديث البيانات الحالية';
+    submitBtn.style.background = '#27ae60';
+    submitBtn.disabled = false;
+    submitBtn.onclick = function() {
+        validateAndSubmit();
+    };
+    
+    // إظهار زر التراجع عن التعديل
+    const cancelBtn = document.getElementById('cancel-btn');
+    cancelBtn.style.display = 'block';
+    cancelBtn.onclick = function() {
+        if (confirm('هل تريد إلغاء التعديل؟')) {
+            adminSection.style.display = 'none';
+        }
+    };
+    
+    // ملء الحقول بالبيانات الحالية
+    document.getElementById('lab_name').value = name;
+    document.getElementById('supervisor').value = supervisor;
+    document.getElementById('count').value = count;
+    document.getElementById('seats').value = seats || count;
+    document.getElementById('software').value = software || '';
+    document.getElementById('error').value = error || '';
+    document.getElementById('description').value = description || '';
+    document.getElementById('lab_code_verify').value = '';
+    document.getElementById('lab_code_verify').placeholder = 'أدخل رمز المختبر للتعديل';
+    
+    // تغيير مسار الإرسال إلى التعديل
+    form.action = '/update/' + Lab_ID;
+    form.method = 'POST';
+    
+    // إظهار النموذج
+    adminSection.style.display = 'block';
+    
+    // تخزين معرف المختبر الجاري تعديله
+    currentEditLabId = Lab_ID;
+}
+
+// دالة التحقق من صحة البيانات قبل الإرسال
+// دالة التحقق من صحة البيانات قبل الإرسال
+function validateAndSubmit() {
+    // التحقق من الحقول المطلوبة
+    const labName = document.getElementById('lab_name').value.trim();
+    const supervisor = document.getElementById('supervisor').value.trim();
+    const count = document.getElementById('count').value.trim();
+    const seats = document.getElementById('seats').value.trim();
+    const labCode = document.getElementById('lab_code_verify').value.trim();
+    
+    let errorMessages = [];
+    
+    if (!labName) {
+        errorMessages.push(' اسم المختبر مطلوب');
+        highlightField('lab_name');
+    }
+    
+    if (!supervisor) {
+        errorMessages.push(' اسم المشرف المسؤول مطلوب');
+        highlightField('supervisor');
+    }
+    
+    if (!count) {
+        errorMessages.push(' عدد الحواسيب مطلوب');
+        highlightField('count');
+    } else if (parseInt(count) <= 0) {
+        errorMessages.push(' عدد الحواسيب يجب أن يكون أكبر من 0');
+        highlightField('count');
+    }
+    
+    if (!seats) {
+        errorMessages.push(' عدد المقاعد مطلوب');
+        highlightField('seats');
+    } else if (parseInt(seats) <= 0) {
+        errorMessages.push(' عدد المقاعد يجب أن يكون أكبر من 0');
+        highlightField('seats');
+    }
+    
+    if (!labCode) {
+        errorMessages.push(' رمز المختبر مطلوب');
+        highlightField('lab_code_verify');
+    }
+    
+    if (errorMessages.length > 0) {
+        // عرض نافذة الخطأ المخصصة
+        showValidationModal(errorMessages);
+        return false;
+    }
+    
+    // إذا كان كل شيء صحيح، نرسل النموذج
+    submitLabForm();
+}
+
+// دالة إظهار نافذة التحقق
+function showValidationModal(errors) {
+    const modal = document.getElementById('validation-modal');
+    const errorList = document.getElementById('validation-error-list');
+    
+    // بناء قائمة الأخطاء
+    let html = '';
+    errors.forEach(error => {
+        html += `<p><i class="fas fa-times-circle"></i> ${error}</p>`;
+    });
+    
+    errorList.innerHTML = html;
+    modal.style.display = 'flex';
+}
+
+// دالة إغلاق نافذة التحقق
+function closeValidationModal() {
+    document.getElementById('validation-modal').style.display = 'none';
+}
+
+// دالة لتمييز حقل معين
+function highlightField(fieldId) {
+    const field = document.getElementById(fieldId);
+    field.style.border = '2px solid #e74c3c';
+    field.style.backgroundColor = 'rgba(231, 76, 60, 0.1)';
+    field.style.boxShadow = '0 0 10px rgba(231, 76, 60, 0.5)';
+    
+    setTimeout(() => {
+        field.style.border = '1px solid rgba(0, 212, 255, 0.2)';
+        field.style.backgroundColor = 'rgba(0, 0, 0, 0.4)';
+        field.style.boxShadow = 'none';
+    }, 3000);
+}
+// دالة لتمييز حقل معين
+function highlightField(fieldId) {
+    const field = document.getElementById(fieldId);
+    field.style.border = '2px solid #e74c3c';
+    field.style.backgroundColor = 'rgba(231, 76, 60, 0.1)';
+    
+    setTimeout(() => {
+        field.style.border = '1px solid rgba(0, 212, 255, 0.2)';
+        field.style.backgroundColor = 'rgba(0, 0, 0, 0.4)';
+    }, 3000);
+}
+
+// دالة إرسال النموذج
+function submitLabForm() {
+    const form = document.getElementById('lab-form');
+    const isEdit = form.action.includes('/update/');
+    
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+    
+    const formData = new FormData(form);
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text())
+    .then(data => {
+        if (data.includes('✅') || data.includes('نجاح')) {
+            alert('✅ تمت العملية بنجاح');
+            window.location.href = '/dashboard';
+        } else {
+            const errorMatch = data.match(/alert\('([^']+)'\)/);
+            if (errorMatch) {
+                alert(errorMatch[1]);
+            } else {
+                alert('حدث خطأ غير متوقع');
+            }
+            window.location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('❌ فشل الاتصال بالخادم');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-save"></i> حفظ';
+    });
+}
+
+// دالة إغلاق نافذة الإضافة
+function closeAdminSection() {
+    document.getElementById('admin-section').style.display = 'none';
+}
+
+// دالة إلغاء التعديل
+function cancelEdit() {
+    document.getElementById('admin-section').style.display = 'none';
+    // إعادة تعيين النموذج لوضع الإضافة
+    prepareAddForm();
+}
+// دوال نافذة تأكيد الحذف
+        function confirmDelete(labId) {
+    checkAdminSession().then(ok => {
+        if (ok) {
+            currentDeleteLabId = labId;
+            document.getElementById('delete-password-modal').style.display = 'flex';
+            document.getElementById('delete-password-input').value = '';
+            document.getElementById('delete-error').style.display = 'none';
+            document.getElementById('delete-password-input').focus();
+        }
+    });
+}
+
+        function closeDeleteModal() {
+            document.getElementById('delete-password-modal').style.display = 'none';
+            currentDeleteLabId = null;
+        }
+
+        function submitDelete() {
+    const password = document.getElementById('delete-password-input').value;
+    if (!password) {
+        showError('delete-error', 'الرجاء إدخال رمز المختبر');
+        return;
+    }
+    if (currentDeleteLabId) {
+        document.getElementById('pass-' + currentDeleteLabId).value = password;
+        document.getElementById('delete-form-' + currentDeleteLabId).submit();
+    }
+    closeDeleteModal();
+}
+        // دوال نافذة تأكيد التعديل
+        function showEditConfirmModal() {
+            // التأكد من أن النموذج في وضع التعديل (أي أن action يحتوي على update)
+            if (!document.getElementById('lab-form').action.includes('/update/')) {
+                // إذا كان في وضع الإضافة، نرسل مباشرة
+                document.getElementById('lab-form').submit();
+                return;
+            }
+            document.getElementById('edit-password-modal').style.display = 'flex';
+            document.getElementById('edit-password-input').value = '';
+            document.getElementById('edit-error').style.display = 'none';
+            document.getElementById('edit-password-input').focus();
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-password-modal').style.display = 'none';
+        }
+
+      
+        // دالة toggleAddForm: تظهر أو تخفي نموذج إضافة/تعديل المختبر
+        function toggleAddForm() {
+            const adminSection = document.getElementById('admin-section');
+            if (adminSection.style.display === 'none' || adminSection.style.display === '') {
+                // قبل الإظهار، نعيد ضبط النموذج لوضع الإضافة الجديد
+                resetForm();
+                adminSection.style.display = 'block';
+            } else {
+                adminSection.style.display = 'none';
+            }
+        }
+    
+    document.getElementById('lab-form').reset();
+    document.getElementById('lab-form').action = '/add_lab';
+    document.getElementById('lab_code_verify').value = '';
+    document.getElementById('lab_code_verify').placeholder = 'رمز المختبر للإضافة';
+    
+    // تنظيف أي بيانات تعديل سابقة
+    currentEditLabId = null;
+
+
+        // دوال المساعد الذكي المحسنة
+        let isFirstOpen = true;
+
+        function toggleChat() {
+    const win = document.getElementById('ai-window');
+    if (win.style.display === 'none' || win.style.display === '') {
+        openChat();
+    } else {
+        closeChat();
+    }
+}
+
+        function clearChat() {
+            const msgArea = document.getElementById('ai-messages');
+            msgArea.innerHTML = '';
+        }
+
+        function addUserMessage(text) {
+            const msgArea = document.getElementById('ai-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message user-message';
+            msgDiv.innerHTML = `<b>أنت:</b> ${text}`;
+            msgArea.appendChild(msgDiv);
+            msgArea.scrollTop = msgArea.scrollHeight;
+        }
+
+        function addBotMessage(text) {
+            const msgArea = document.getElementById('ai-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message bot-message';
+            msgDiv.innerHTML = `<b>المساعد:</b> ${text}`;
+            msgArea.appendChild(msgDiv);
+            msgArea.scrollTop = msgArea.scrollHeight;
+        }
+
+        function addTypingIndicator() {
+            const msgArea = document.getElementById('ai-messages');
+            const indicator = document.createElement('div');
+            indicator.className = 'message bot-message typing-indicator';
+            indicator.id = 'typing-indicator';
+            indicator.innerHTML = "<b>المساعد:</b> جاري المعالجة... ⏳";
+            msgArea.appendChild(indicator);
+            msgArea.scrollTop = msgArea.scrollHeight;
+            return indicator;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('user-msg');
+            const userText = input.value.trim();
+            if (!userText) return;
+
+            // إضافة رسالة المستخدم
+            addUserMessage(userText);
+            input.value = '';
+
+            // إظهار مؤشر الكتابة
+            const typingIndicator = addTypingIndicator();
+
+            try {
+                const response = await fetch('/ask_ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: userText })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // إزالة مؤشر الكتابة
+                document.getElementById('typing-indicator')?.remove();
+
+                // التحقق من وجود الرد
+                if (data && data.reply) {
+                    addBotMessage(data.reply);
+                } else {
+                    addBotMessage("عذراً، لم أتمكن من فهم السؤال. يرجى المحاولة مرة أخرى.");
+                }
+
+            } catch (error) {
+                console.error('Error in sendMessage:', error);
+                document.getElementById('typing-indicator')?.remove();
+                addBotMessage("⚠️ حدث خطأ في الاتصال بالخادم. يرجى التحقق من اتصالك والمحاولة لاحقاً.");
+            }
+        }
+
+        function clearDescription(index) {
+            const area = document.getElementById('description-' + index);
+            if (area) area.value = '';
+            const labelsContainer = document.getElementById('pc-labels-' + index);
+            if (labelsContainer) {
+                labelsContainer.innerHTML = '<span style="color:#777; font-size: 0.8rem;">(لم يتم اختيار أي حاسبة بعد)</span>';
+            }
+        }
+async function clearDescription(labId, labIndex) {
+    if (!confirm('هل تريد مسح قائمة الأجهزة العطلانة لهذا المختبر؟')) return;
+    const response = await fetch(`/api/lab/${labId}/clear-errors`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    });
+    if (response.ok) {
+        document.getElementById(`error-${labIndex}`).innerText = 'لا يوجد';
+        alert('تم مسح الأجهزة العطلانة');
+    } else {
+        alert('فشل المسح');
+    }
+}
+        // --- Three.js (من الملفين)
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        const particlesGeometry = new THREE.BufferGeometry();
+        const posArray = new Float32Array(55000 * 3);
+        for (let i = 10; i < 95000; i++) posArray[i] = (Math.random() - 0.5) * 15;
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particlesMesh = new THREE.Points(particlesGeometry, new THREE.PointsMaterial({ size: 0.015, color: 0x00d4ff }));
+        scene.add(particlesMesh);
+        camera.position.z = 7;
+        function animate() { requestAnimationFrame(animate); particlesMesh.rotation.y += 0.001; renderer.render(scene, camera); }
+        animate();
+
+        // --- منطق قائمة الحاسبات (من الملفين)
+        // متغير لتخزين رقم المختبر الحالي
+let currentLabId = null;
+let currentLabIndex = null;
+
+async function showLabComputers(labName, count, labIndex, labId) {
+    currentLabId = labId;
+    currentLabIndex = labIndex;
+    const modal = document.getElementById('comp-modal');
+    const title = document.getElementById('modal-title');
+    const container = document.getElementById('computers-list-container');
+    title.innerText = `حاسبات ${labName} (العدد: ${count})`;
+    container.innerHTML = '';
+    modal.style.display = 'flex';
+
+    // جلب الحاسبات المختارة مسبقاً من قاعدة البيانات
+    const response = await fetch(`/api/lab/${labId}/selected-computers`);
+    const data = await response.json();
+    const selectedSet = new Set(data.computers);
+
+    for (let i = 1; i <= count; i++) {
+        const btn = document.createElement('button');
+        btn.innerText = `PC-${i}`;
+        btn.className = 'btn-mode';
+        btn.style.padding = '5px';
+        btn.style.fontSize = '0.8rem';
+        btn.style.justifyContent = 'center';
+        if (selectedSet.has(i)) {
+            btn.style.background = '#27ae60';
+            btn.style.borderColor = '#27ae60';
+            btn.innerText += ' ✓';
+        }
+        btn.onclick = async function () {
+            if (selectedSet.has(i)) {
+                // إزالة من قاعدة البيانات
+                const delResp = await fetch(`/api/lab/${labId}/remove-computer`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pc_number: i })
+                });
+                if (delResp.ok) {
+                    selectedSet.delete(i);
+                    btn.style.background = '';
+                    btn.style.borderColor = '';
+                    btn.innerText = `PC-${i}`;
+                    updatePcBadgesLocal(labIndex, selectedSet);
+                } else {
+                    alert('فشل في إزالة الحاسبة');
+                }
+            } else {
+                // إضافة إلى قاعدة البيانات
+                const addResp = await fetch(`/api/lab/${labId}/add-computer`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pc_number: i })
+                });
+                if (addResp.ok) {
+                    selectedSet.add(i);
+                    btn.style.background = '#27ae60';
+                    btn.style.borderColor = '#27ae60';
+                    btn.innerText = `PC-${i} ✓`;
+                    updatePcBadgesLocal(labIndex, selectedSet);
+                } else {
+                    alert('فشل في إضافة الحاسبة');
+                }
+            }
+        };
+        container.appendChild(btn);
+    }
+}
+
+function updatePcBadgesLocal(labIndex, selectedSet) {
+    const container = document.getElementById(`pc-labels-${labIndex}`);
+    if (!container) return;
+    container.innerHTML = '';
+    if (selectedSet.size === 0) {
+        container.innerHTML = '<span style="color:#777; font-size: 0.8rem;">(لم يتم اختيار أي حاسبة بعد)</span>';
+    } else {
+        const sorted = Array.from(selectedSet).sort((a,b)=>a-b);
+        sorted.forEach(pc => {
+            const badge = document.createElement('div');
+            badge.className = 'pc-badge';
+            badge.innerText = `PC-${pc}`;
+            container.appendChild(badge);
+        });
+    }
+}
+        function removeComputer(index) {
+            selectedComputers.splice(index, 1);
+            renderSelectedList(); 
+        }
+
+        async function generateSmartSchedule(event) {
+            const btn = event.target;
+            const tableBody = document.getElementById('schedule-body');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحليل...';
+
+            try {
+                const response = await fetch('/generate_smart_schedule', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    tableBody.innerHTML = ''; // تنظيف الجدول القديم
+                    result.data.forEach(row => {
+                        tableBody.innerHTML += `
+                            <tr>
+                                <td style="padding:10px;">${row.lab}</td>
+                                <td>${row.day}</td>
+                                <td>${row.subject}</td>
+                                <td>المرحلة ${row.stage}</td>
+                            </tr>`;
+                    });
+                    document.getElementById('schedule-container').style.display = 'block';
+                    window.scrollTo({
+                        top: document.getElementById('schedule-container').offsetTop,
+                        behavior: 'smooth'
+                    });
+                } else {
+                    alert("خطأ: " + result.error);
+                }
+            } catch (error) {
+                alert("فشل في الاتصال بالسيرفر");
+            } finally {
+                btn.innerHTML = '<i class="fas fa-calendar-alt"></i> إنشاء جدول المحاضرات الذكي';
+            }
+        }
+    
+
+    // تعديل دالة prepareEdit لتشمل Number_of_seats
+    function prepareEdit(Lab_ID, name, supervisor, count, software, error, description, seats) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const adminSection = document.getElementById('admin-section');
+        adminSection.style.display = 'block';
+        document.getElementById('form-title').innerHTML = '<i class="fas fa-edit"></i> تعديل بيانات: ' + name;
+        document.getElementById('submit-btn').innerText = 'تحديث البيانات الحالية';
+        document.getElementById('submit-btn').style.background = '#27ae60';
+        document.getElementById('cancel-btn').style.display = 'block';
+        document.getElementById('lab_name').value = name;
+        document.getElementById('supervisor').value = supervisor;
+        document.getElementById('count').value = count;
+        document.getElementById('seats').value = seats || '';  // تأكد من وجود حقل seats في النموذج
+        document.getElementById('software').value = software;
+        document.getElementById('error').value = error;
+        document.getElementById('description').value = description;
+        document.getElementById('lab_code_verify').value = '';
+        document.getElementById('lab-form').action = '/update/' + Lab_ID;
+    }
+    // دالة generateSmartSchedule (معدلة لاستخدام API)
+    async function generateSmartSchedule(event) {
+        const btn = event.target;
+        const tableBody = document.getElementById('schedule-body');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحليل...';
+
+        try {
+            const response = await fetch('/generate_smart_schedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const result = await response.json();
+            if (result.success) {
+                tableBody.innerHTML = '';
+                result.data.forEach(row => {
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td style="padding:10px;">${row.lab}</td>
+                            <td>${row.day}</td>
+                            <td>${row.subject}</td>
+                            <td>المرحلة ${row.stage}</td>
+                        </tr>`;
+                });
+                document.getElementById('schedule-container').style.display = 'block';
+                window.scrollTo({ top: document.getElementById('schedule-container').offsetTop, behavior: 'smooth' });
+            } else {
+                alert("خطأ: " + result.error);
+            }
+        } catch (error) {
+            alert("فشل في الاتصال بالسيرفر");
+        } finally {
+            btn.innerHTML = '<i class="fas fa-calendar-alt"></i> إنشاء جدول المحاضرات الذكي';
+        }
+    }
+   
+    // استبدال دالة createBackup القديمة لفتح نافذة الاختيار
+    async function createBackup() {
+        document.getElementById('backup-options-modal').style.display = 'flex';
+    }
+// منع ظهور كروت مكررة بناءً على Lab_ID
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.lab-card');
+    const seenIds = new Set();
+    cards.forEach(card => {
+        const id = card.getAttribute('data-lab-id');
+        if (seenIds.has(id)) {
+            // حذف البطاقة المكررة
+        } else {
+            seenIds.add(id);
+        }
+    });
+});
+    // دالة جديدة لتنفيذ إنشاء النسخة مع اختيار المرحلة
+    async function performBackup() {
+        const selected = document.querySelector('input[name="backup_stage"]:checked');
+        if (!selected) {
+            alert('الرجاء اختيار المرحلة');
+            return;
+        }
+        const stage = selected.value;
+        try {
+            const response = await fetch('/api/backups/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stage: stage })  // إرسال المرحلة إلى الخادم
+            });
+            const data = await response.json();
+            if (data.success) {
+                await loadBackupsList();
+                closeModal('backup-options-modal');
+                alert('تم إنشاء النسخة الاحتياطية بنجاح');
+            } else {
+                alert('خطأ في إنشاء النسخة: ' + (data.error || ''));
+            }
+        } catch (error) {
+            console.error('خطأ:', error);
+            alert('حدث خطأ في الاتصال');
+        }
+    }
+async function loadAllSelectedComputers() {
+    const labCards = document.querySelectorAll('.lab-card');
+    for (let card of labCards) {
+        const labId = card.getAttribute('data-lab-id');
+        const labIndex = card.getAttribute('data-lab-index');
+        if (labId && labIndex) {
+            const resp = await fetch(`/api/lab/${labId}/selected-computers`);
+            const data = await resp.json();
+            if (data.success) {
+                updatePcBadgesLocal(labIndex, new Set(data.computers));
+            }
+        }
+    }
+}
+// عند تحميل الصفحة
+window.addEventListener('DOMContentLoaded', () => {
+  const isChatOpen = localStorage.getItem('chatOpen') === 'true';
+  if (!isChatOpen) {
+    // إخفاء الدردشة إذا كانت مغلقة سابقًا
+    closeChat();
+  } else {
+    openChat();
+  }
+});
+
+// عند إغلاق الدردشة يدويًا
+function closeChat() {
+  // كود إغلاق الدردشة
+  localStorage.setItem('chatOpen', 'false');
+}
+
+// عند فتح الدردشة يدويًا
+function openChat() {
+  // كود فتح الدردشة
+  localStorage.setItem('chatOpen', 'true');
+}
+// التحقق من صحة الجلسة باستخدام endpoint صحيح
+async function checkAdminSession() {
+    try {
+        const res = await fetch('/api/admin/status', { credentials: 'include' });
+        const data = await res.json();
+        if (!data.logged_in) {
+            // اختياري: إظهار رسالة أو نافذة تسجيل الدخول
+            return false;
+        }
+        return true;
+    } catch(e) {
+        console.error("خطأ في التحقق من الجلسة:", e);
+        return false;
+    }
+}
+
+// نفس الوظيفة ولكن مع إظهار نافذة تسجيل الدخول تلقائياً عند انتهاء الجلسة
+async function ensureAdminSession() {
+    try {
+        const res = await fetch('/api/admin/status', { credentials: 'include' });
+        const data = await res.json();
+        if (!data.logged_in) {
+            showAdminPasswordModal();
+            return false;
+        }
+        return true;
+    } catch(e) {
+        console.error('خطأ في التحقق من الجلسة:', e);
+        showAdminPasswordModal();
+        return false;
+    }
+}
+function ensureAdminSession() {
+    return fetch('/api/admin/check-session', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.logged_in) {
+                // محاولة إعادة تسجيل الدخول تلقائياً (اختياري)
+                // أو إظهار نافذة تسجيل الدخول
+                showAdminPasswordModal();
+                return false;
+            }
+            return true;
+        });
+}
+async function confirmDelete(labId) {
+    const sessionOk = await ensureAdminSession();
+    if (!sessionOk) return;
+    currentDeleteLabId = labId;
+    document.getElementById('delete-password-modal').style.display = 'flex';
+    document.getElementById('delete-password-input').value = '';
+    document.getElementById('delete-error').style.display = 'none';
+    document.getElementById('delete-password-input').focus();
+}
+
+function submitEdit() {
+    const password = document.getElementById('edit-password-input').value;
+    if (!password) {
+        showError('edit-error', 'الرجاء إدخال رمز المختبر');
+        return;
+    }
+    ensureAdminSession().then(ok => {
+        if (ok) {
+            document.getElementById('lab_code_verify').value = password;
+            document.getElementById('lab-form').submit();
+        }
+        closeEditModal();
+    });
+}
+function submitEdit() {
+    const password = document.getElementById('edit-password-input').value;
+    if (!password) {
+        showError('edit-error', 'الرجاء إدخال رمز المختبر');
+        return;
+    }
+    
+    ensureAdminSession()
+        .then(ok => {
+            if (ok) {
+                document.getElementById('lab_code_verify').value = password;
+                document.getElementById('lab-form').submit();
+            } else {
+                // إذا فشلت الجلسة، نغلق النافذة ونطلب تسجيل الدخول مرة أخرى
+                closeEditModal();
+                showAdminPasswordModal();
+            }
+        })
+        .catch(err => {
+            console.error('خطأ في submitEdit:', err);
+            closeEditModal();
+            alert('حدث خطأ في الاتصال بالخادم. يرجى المحاولة مرة أخرى.');
+        });
+}
+function openChat() {
+    const win = document.getElementById('ai-window');
+    if (win) {
+        win.style.display = 'flex';
+        localStorage.setItem('chatOpen', 'true');
+        // إضافة رسالة ترحيب إذا كانت الدردشة فارغة
+        const msgArea = document.getElementById('ai-messages');
+        if (msgArea && msgArea.children.length === 0) {
+            addBotMessage("مرحباً! أنا مساعدك الذكي. يمكنك سؤالي عن المختبرات، الأجهزة، البرامج، أو أي شيء يتعلق بقسم تقنيات الحاسوب.");
+        }
+    }
+}
+
+function closeChat() {
+    const win = document.getElementById('ai-window');
+    if (win) {
+        win.style.display = 'none';
+        localStorage.setItem('chatOpen', 'false');
+    }
+}
+// تعديل CSS ديناميكياً لضمان الإخفاء الافتراضي (احتياطي)
+document.addEventListener('DOMContentLoaded', function() {
+    const aiWin = document.getElementById('ai-window');
+    if (aiWin) {
+        aiWin.style.display = 'none';   // إخفاء فوراً
+        localStorage.setItem('chatOpen', 'false');
+    }
+    // إعادة تعريف دالة toggleChat إذا لزم الأمر
+    window.toggleChat = function() {
+        const win = document.getElementById('ai-window');
+        if (win.style.display === 'none') {
+            win.style.display = 'flex';
+            localStorage.setItem('chatOpen', 'true');
+            // إضافة رسالة ترحيب إذا كانت فارغة
+            if (document.getElementById('ai-messages').children.length === 0) {
+                addBotMessage("مرحباً! أنا مساعدك الذكي...");
+            }
+        } else {
+            win.style.display = 'none';
+            localStorage.setItem('chatOpen', 'false');
+        }
+    };
+});
+</script>
+<!-- إضافة نظام التخزين المؤقت -->
+<script src="/static/js/offline-sync.js"></script>
+{% include 'offline_status.html' ignore missing %}
+</body>
+</html>
